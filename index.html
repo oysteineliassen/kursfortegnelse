@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<title>Kursfortegnelse</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#f3f5f8; --card:#fff; --ink:#1b2430; --muted:#6b7686; --line:#dfe4ea;
+  --brand:#1f3a5f; --accent:#1f5fa8; --accent-soft:#e3edf9; --danger:#b8352a; --ok:#2e7d4f; --warn:#a86b00;
+  --radius:14px;
+  --st:env(safe-area-inset-top,0px); --sb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+
+/* Topbar */
+.top{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;padding:calc(var(--st) + 10px) 12px 10px;display:flex;align-items:center;gap:8px}
+.top h1{font-size:18px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:650}
+.top .sub{display:block;font-size:12px;font-weight:400;opacity:.75}
+.iconbtn{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex:none}
+.iconbtn:active{background:rgba(255,255,255,.15)}
+.iconbtn svg{width:22px;height:22px}
+.tabs{position:sticky;top:calc(var(--st) + 60px);z-index:19;display:flex;background:var(--brand);padding:0 8px 8px;gap:6px}
+.tabs button{flex:1;padding:9px 4px;border-radius:10px;color:#cfdcec;font-size:14px;font-weight:600}
+.tabs button.on{background:#fff;color:var(--brand)}
+
+main{padding:12px 12px calc(100px + var(--sb));max-width:760px;margin:0 auto}
+
+/* Cards / lists */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 1px 2px rgba(20,30,50,.06);border:1px solid var(--line)}
+.board{display:block;width:100%;text-align:left;padding:14px 16px;margin-bottom:10px}
+.board .t{font-weight:650;font-size:17px}
+.board .m{color:var(--muted);font-size:13px;margin-top:2px}
+.empty{color:var(--muted);text-align:center;padding:40px 16px}
+
+.kurs{display:flex;width:100%;text-align:left;align-items:stretch;padding:0;margin-bottom:8px;overflow:hidden}
+.kurs .nr{flex:none;width:76px;padding:12px 8px;background:var(--accent-soft);color:var(--brand);font:600 14px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-all}
+.kurs .b{flex:1;min-width:0;padding:10px 12px}
+.kurs .d{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kurs .d.none{color:var(--muted);font-weight:400;font-style:italic}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag{font-size:12px;padding:2px 7px;border-radius:999px;background:#eef1f5;color:#3b4656;white-space:nowrap}
+.tag.v{background:#e7f0e9;color:#245c3b}
+.tag.k{background:#fdf1dc;color:#7a5200}
+.tag.j{background:#f6e6f4;color:#7a2a6e}
+.kurs:active{background:#f7f9fc}
+
+.fab{position:fixed;right:16px;bottom:calc(18px + var(--sb));z-index:15;background:var(--accent);color:#fff;border-radius:18px;padding:15px 20px;font-weight:650;box-shadow:0 6px 18px rgba(31,95,168,.35);display:flex;gap:8px;align-items:center}
+.fab svg{width:20px;height:20px}
+
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:12px 16px;border-radius:12px;font-weight:600;background:#fff;border:1px solid var(--line)}
+.btn.p{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.d{color:var(--danger)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.5}
+
+/* Forms */
+.sec{margin:14px 0 8px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.form{padding:4px 14px 14px}
+.fld{padding-top:10px}
+.fld>label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.fld input,.fld select,.fld textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfcfd;outline:none}
+.fld input:focus{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 10px}
+.unit{position:relative}
+.unit input{padding-right:46px}
+.unit span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--muted);pointer-events:none}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:15px;font-weight:550}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Bottom sheet */
+.scrim{position:fixed;inset:0;background:rgba(15,25,40,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-height:94vh;background:var(--bg);border-radius:18px 18px 0 0;display:flex;flex-direction:column;transform:translateY(105%);transition:transform .25s cubic-bezier(.2,.8,.2,1);max-width:760px;margin:0 auto}
+.sheet.on{transform:none}
+.sh-head{display:flex;align-items:center;gap:6px;padding:10px 10px 6px;border-bottom:1px solid var(--line)}
+.sh-head h2{flex:1;margin:0;font-size:17px}
+.sh-body{overflow-y:auto;padding:0 14px 14px;flex:1;overscroll-behavior:contain}
+.sh-foot{display:flex;gap:8px;padding:10px 12px calc(10px + var(--sb));border-top:1px solid var(--line);background:#fff}
+.sh-foot .btn{flex:1}
+
+/* Dialog + toast */
+.dlg{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(15,25,40,.45)}
+.dlg .card{padding:18px;max-width:360px;width:100%}
+.dlg h3{margin:0 0 8px}
+.dlg p{margin:0 0 16px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(90px + var(--sb));transform:translateX(-50%);z-index:70;background:#1b2430;color:#fff;padding:12px 14px 12px 16px;border-radius:12px;display:flex;gap:14px;align-items:center;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:92vw}
+.toast button{color:#8fc1ff;font-weight:700}
+
+.menu{position:absolute;right:10px;top:calc(var(--st) + 54px);z-index:30;background:#fff;color:var(--ink);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.2);overflow:hidden;min-width:210px}
+.menu button{display:block;width:100%;text-align:left;padding:13px 16px;border-bottom:1px solid var(--line)}
+.menu button:last-child{border-bottom:0}
+
+.notice{padding:12px 14px;border-radius:12px;background:#fff7e6;border:1px solid #f1d9a6;color:#6b4a00;font-size:14px;margin-bottom:12px}
+.check{padding:10px 14px;font-size:14px}
+.check div{padding:3px 0}
+.check .w{color:var(--warn)}
+.check .o{color:var(--ok)}
+
+/* Preview of A4 */
+.preview-wrap{overflow:hidden;border-radius:8px;box-shadow:0 2px 10px rgba(20,30,50,.15);background:#fff;margin:12px 0}
+.preview-inner{transform-origin:0 0}
+
+/* ---------- Printed document (A4 @ 96dpi = 794 x 1123 px) ---------- */
+.page{width:794px;height:1123px;padding:52px 56px 40px;background:#fff;color:#000;font:11px/1.25 Arial,Helvetica,sans-serif;position:relative;display:flex;flex-direction:column;overflow:hidden}
+.page + .page{margin-top:16px}
+.page h1{font-size:20px;margin:0 0 14px;padding-bottom:4px;border-bottom:1px solid #000;width:260px}
+.hb{display:flex;gap:22px;margin-bottom:18px}
+.hb table{border-collapse:collapse}
+.hb td{border:1px solid #555;padding:2px 5px;height:18px;white-space:nowrap}
+.hb .cap{background:#dbe9f6;font-variant:small-caps;font-weight:700;font-size:10.5px}
+.hb .num{text-align:right}
+.hb .imp{font-weight:700;font-size:9.5px;white-space:normal;width:120px;vertical-align:top;line-height:1.2}
+.kt{border-collapse:collapse;width:100%;table-layout:fixed}
+.kt th{background:#dbe9f6;font-weight:400;border:1px solid #555;padding:3px 2px;font-size:10.5px}
+.kt td{border:1px solid #555;padding:0 4px;height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kt td.c{text-align:center}
+.foot{margin-top:auto;border:1px solid #555;display:grid;grid-template-columns:47% 28% 25%;font-size:9px}
+.foot>div{border:1px solid #555;padding:3px 5px;min-height:34px}
+.foot b{font-size:8.5px}
+.foot .big{font-size:14px}
+.foot .firma{display:flex;gap:10px;align-items:center}
+.foot .firma .fn{font-weight:700;font-size:14px;color:#1f3a5f;min-width:110px}
+
+#print-root{display:none}
+@page{size:A4;margin:0}
+@media print{
+  html,body{background:#fff}
+  body>*:not(#print-root){display:none!important}
+  #print-root{display:block}
+  #print-root .page{margin:0;page-break-after:always;break-after:page}
+  #print-root .page:last-child{page-break-after:auto;break-after:auto}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"></div>
+<div id="layer"></div>
+<div id="print-root"></div>
+
+<script>
+'use strict';
+/* ================= Data ================= */
+const LS = 'kursfortegnelse.v1';
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const OPTS = {
+  type: ['Automat', 'Jordfeilautomat', 'EFF.BR.', 'Smeltesikring', 'Lastbryter'],
+  inn: ['6','10','13','16','20','25','32','40','50','63','80','100','125','160','200','250'],
+  kar: ['B','C','D'],
+  s: ['1,5','2,5','4','6','10','16','25','35','50','70','95','120','150','185','240'],
+  ref: ['A1','A2','B1','B2','C','D1','D2','E','F'],
+  jfb: ['30','100','300','500'],
+  system: ['TN-S','TN-C-S','TN-C','IT','TT'],
+  spenning: ['230','400'],
+};
+
+const defaultFirma = () => ({ navn: 'Avitell AS', adr: 'Industrigata 5', post: '4632 KRISTIANSAND S', tlf: '38178888' });
+
+function newBoard() {
+  return { id: uid(), fordeling: '', forsyntFra: '', ikMaks: '', ikMin: '', ijMaks: '', ijMin: '',
+    spenning: '400', frekvens: '50', tilforsel: '', system: 'TN-S', forankoblet: '', jordelektrode: '',
+    anlegg: '', adresse: '', dato: '', norm: 'NEK 400:2018', kurser: [], updated: Date.now() };
+}
+function newKurs(o = {}) {
+  return Object.assign({ id: uid(), nr: '', beskr: '', type: '', inn: '', kar: '', s: '', l: '', ref: '', rekke: '', jfb: '' }, o);
+}
+function seed() {
+  const b = Object.assign(newBoard(), {
+    fordeling: '433.004 MENY', forsyntFra: 'OVERBELASNINGSVERN',
+    ikMaks: '27,945', ikMin: '21,883', ijMaks: '27,546', ijMin: '23,350',
+    tilforsel: '3 x 4 x 240', forankoblet: 'EFF.BR. 4x800 A',
+    anlegg: 'Vennesla Atrium Næringsdel', dato: '14.11.2022 14:01:01'
+  });
+  b.kurser = [
+    newKurs({ nr: '0', beskr: '433.004 Meny', s: '240', l: '24', ref: 'E' }),
+    newKurs({ nr: 'XS1', beskr: 'Hovedbryter (Lastbryter)' }),
+    newKurs({ nr: '-XQ2', beskr: '433.100A Meny teknisk rom 1.etg', type: 'EFF.BR.', inn: '128', s: '95', l: '43', ref: 'E' }),
+    newKurs({ nr: '-XQ3', beskr: '433.100B Meny ferskvare 1.etg', type: 'EFF.BR.', inn: '225', s: '240', l: '71', ref: 'E' }),
+    newKurs({ nr: '.XQ4', beskr: '434.001 Kjøletavle Meny', type: 'EFF.BR.', inn: '250', s: '240', l: '17', ref: 'E' }),
+    newKurs({ nr: '-XQ5', beskr: 'Ventilasjon varmebatteri', type: 'EFF.BR.', inn: '63', s: '16', l: '17', ref: 'E' }),
+    newKurs({ nr: '-XQ6', beskr: 'Ventilasjonsanlegg', type: 'EFF.BR.', inn: '32', s: '6', l: '20', ref: 'E' }),
+    newKurs({ nr: '-QE10', beskr: 'Overspenningsvern' }),
+  ];
+  return b;
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(LS));
+    if (d && Array.isArray(d.boards)) { d.firma = Object.assign(defaultFirma(), d.firma || {}); return d; }
+  } catch (e) {}
+  return { boards: [seed()], firma: defaultFirma() };
+}
+let db = load();
+function save() {
+  try { localStorage.setItem(LS, JSON.stringify(db)); } catch (e) {}
+}
+try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+
+/* ================= State / routing ================= */
+const ui = { boardId: null, tab: 'kurser', editing: null, isNew: false, insertAfter: null, sheetMode: null };
+const board = () => db.boards.find(b => b.id === ui.boardId);
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function route() {
+  const h = location.hash.slice(1);
+  const m = h.match(/^f-([a-z0-9]+)(?:-(kurser|data|gen))?(-e)?$/);
+  if (m && db.boards.some(b => b.id === m[1])) {
+    ui.boardId = m[1]; ui.tab = m[2] || 'kurser';
+  } else { ui.boardId = null; }
+  if (!h.endsWith('-e') && $('#sheet').classList.contains('on')) hideSheet();
+  if (h.endsWith('-e') && !$('#sheet').classList.contains('on')) { history.replaceState(null, '', '#' + h.slice(0, -2)); }
+  render();
+}
+function go(hash) { if (location.hash.slice(1) !== hash) location.hash = hash; else route(); }
+window.addEventListener('hashchange', route);
+
+/* ================= Icons ================= */
+const I = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+};
+
+/* ================= Render ================= */
+function render() {
+  const app = $('#app');
+  if (!ui.boardId) return renderList(app);
+  const b = board();
+  app.innerHTML = `
+    <div class="top">
+      <button class="iconbtn" data-a="home" aria-label="Tilbake">${I.back}</button>
+      <h1>${esc(b.fordeling || 'Ny fordeling')}<span class="sub">${esc(b.anlegg || '')}${b.anlegg ? ' · ' : ''}${b.kurser.length} kurs</span></h1>
+      <button class="iconbtn" data-a="menu" aria-label="Meny">${I.more}</button>
+    </div>
+    <div class="tabs">
+      ${[['kurser','Kurser'],['data','Anleggsdata'],['gen','Generer']].map(([k,l]) =>
+        `<button class="${ui.tab===k?'on':''}" data-tab="${k}">${l}</button>`).join('')}
+    </div>
+    <main id="main"></main>
+    ${ui.tab === 'kurser' ? `<button class="fab" data-a="add">${I.plus} Nytt kurs</button>` : ''}`;
+  const main = $('#main');
+  if (ui.tab === 'kurser') renderKurser(main, b);
+  else if (ui.tab === 'data') renderData(main, b);
+  else renderGen(main, b);
+}
+
+function renderList(app) {
+  const list = [...db.boards].sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  app.innerHTML = `
+    <div class="top">
+      <h1 style="padding-left:6px">Kursfortegnelser</h1>
+      <button class="iconbtn" data-a="settings" aria-label="Innstillinger">${I.gear}</button>
+    </div>
+    <main>
+      ${list.length ? list.map(b => `
+        <button class="card board" data-open="${b.id}">
+          <div class="t">${esc(b.fordeling || 'Uten navn')}</div>
+          <div class="m">${esc(b.anlegg || 'Anlegg ikke satt')} · ${b.kurser.length} kurs · endret ${fmtDate(b.updated)}</div>
+        </button>`).join('') : `<div class="empty">Ingen fordelinger ennå.<br>Trykk «Ny fordeling» for å starte.</div>`}
+      <div class="row" style="margin-top:14px">
+        <label class="btn" style="flex:1;text-align:center">Importer fil<input type="file" accept=".json,application/json" data-a="import" hidden></label>
+      </div>
+    </main>
+    <button class="fab" data-a="newboard">${I.plus} Ny fordeling</button>`;
+}
+
+function kursTags(k) {
+  const t = [];
+  const vern = [k.type, [k.kar, k.inn && (k.inn + ' A')].filter(Boolean).join(' ')].filter(Boolean).join(' ');
+  if (vern) t.push(`<span class="tag v">${esc(vern)}</span>`);
+  const kab = [k.s && (k.s + ' mm²'), k.l && (k.l + ' m'), k.ref].filter(Boolean).join(' · ');
+  if (kab) t.push(`<span class="tag k">${esc(kab)}</span>`);
+  if (k.jfb) t.push(`<span class="tag j">Jfb ${esc(k.jfb)} mA</span>`);
+  if (k.rekke) t.push(`<span class="tag">Rk ${esc(k.rekke)}</span>`);
+  return t.join('');
+}
+
+function renderKurser(main, b) {
+  if (!b.kurser.length) {
+    main.innerHTML = `<div class="empty">Ingen kurser ennå.<br>Trykk «Nytt kurs» nede til høyre.</div>`;
+    return;
+  }
+  main.innerHTML = b.kurser.map(k => `
+    <button class="card kurs" data-kurs="${k.id}">
+      <div class="nr">${esc(k.nr || '–')}</div>
+      <div class="b">
+        <div class="d ${k.beskr ? '' : 'none'}">${esc(k.beskr || 'Uten beskrivelse')}</div>
+        <div class="tags">${kursTags(k)}</div>
+      </div>
+    </button>`).join('');
+}
+
+function unitInput(key, val, unit, mode = 'decimal') {
+  return `<div class="unit"><input data-f="${key}" value="${esc(val)}" inputmode="${mode}" autocomplete="off"><span>${unit}</span></div>`;
+}
+function fld(label, inner) { return `<div class="fld"><label>${label}</label>${inner}</div>`; }
+function txt(key, val, ph = '') { return `<input data-f="${key}" value="${esc(val)}" placeholder="${esc(ph)}" autocomplete="off">`; }
+function chipRow(key, opts, val) {
+  return `<div class="chips" data-chips="${key}">${opts.map(o =>
+    `<button type="button" class="chip ${String(o) === String(val) ? 'on' : ''}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
+}
+
+function renderData(main, b) {
+  main.innerHTML = `
+    <div class="sec">Fordeling og kortslutningsverdier</div>
+    <div class="card form" data-form="board">
+      ${fld('Fordeling', txt('fordeling', b.fordeling, 'f.eks. 433.004 MENY'))}
+      ${fld('Forsynt fra', txt('forsyntFra', b.forsyntFra))}
+      <div class="grid2">
+        ${fld('Ik maks', unitInput('ikMaks', b.ikMaks, 'kA'))}
+        ${fld('Ik min', unitInput('ikMin', b.ikMin, 'kA'))}
+        ${fld('Ij maks', unitInput('ijMaks', b.ijMaks, 'kA'))}
+        ${fld('Ij min', unitInput('ijMin', b.ijMin, 'kA'))}
+      </div>
+    </div>
+    <div class="sec">Anleggsdata</div>
+    <div class="card form" data-form="board">
+      <div class="grid2">
+        ${fld('Systemspenning', unitInput('spenning', b.spenning, 'V', 'numeric'))}
+        ${fld('Frekvens', unitInput('frekvens', b.frekvens, 'Hz', 'numeric'))}
+      </div>
+      ${fld('Fordelingssystem', chipRow('system', OPTS.system, b.system) + txt('system', b.system))}
+      ${fld('Tilførselskabel', unitInput('tilforsel', b.tilforsel, 'mm²', 'text'))}
+      ${fld('Forankoblet vern', txt('forankoblet', b.forankoblet, 'f.eks. EFF.BR. 4x800 A'))}
+      ${fld('Jordelektrode (type)', txt('jordelektrode', b.jordelektrode))}
+    </div>
+    <div class="sec">Dokument</div>
+    <div class="card form" data-form="board">
+      ${fld('Anlegg', txt('anlegg', b.anlegg))}
+      ${fld('Anleggets adresse', txt('adresse', b.adresse))}
+      ${fld('Dato', `<div style="display:flex;gap:8px">${txt('dato', b.dato, 'Tom = dato ved generering')}<button class="btn" data-a="now" style="flex:none">Nå</button></div>`)}
+      ${fld('Norm', txt('norm', b.norm))}
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:12px 4px">Firmaopplysninger i bunnfeltet endres under ⚙ på forsiden.</p>`;
+}
+
+/* ---------- Checks + document generation ---------- */
+function checks(b) {
+  const out = [];
+  const seen = {};
+  b.kurser.forEach(k => { const n = (k.nr || '').trim(); if (n) seen[n] = (seen[n] || 0) + 1; });
+  const dup = Object.keys(seen).filter(n => seen[n] > 1);
+  if (dup.length) out.push(['w', `Dupliserte kursnummer: ${dup.join(', ')}`]);
+  const noNr = b.kurser.filter(k => !(k.nr || '').trim()).length;
+  if (noNr) out.push(['w', `${noNr} kurs mangler kursnummer`]);
+  const noDesc = b.kurser.filter(k => !(k.beskr || '').trim()).length;
+  if (noDesc) out.push(['w', `${noDesc} kurs mangler beskrivelse`]);
+  if (!b.fordeling) out.push(['w', 'Fordeling er ikke navngitt (Anleggsdata)']);
+  if (!b.anlegg) out.push(['w', 'Anlegg er ikke satt (Anleggsdata)']);
+  if (!out.length) out.push(['o', 'Alt ser komplett ut']);
+  return out;
+}
+
+function nowStr() {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+function fmtDate(t) { if (!t) return '–'; const d = new Date(t); return d.toLocaleDateString('no-NO', { day: 'numeric', month: 'short', year: 'numeric' }); }
+
+const FIRST_ROWS = 38, NEXT_ROWS = 49;
+function docPages(b) {
+  const rows = b.kurser.slice();
+  const chunks = [rows.slice(0, FIRST_ROWS)];
+  for (let i = FIRST_ROWS; i < rows.length; i += NEXT_ROWS) chunks.push(rows.slice(i, i + NEXT_ROWS));
+  const dato = b.dato || nowStr();
+  const f = db.firma;
+  const total = chunks.length;
+  const kv = (v, u) => v ? `${esc(v)} [${u}]` : '';
+  return chunks.map((ch, i) => `
+  <div class="page">
+    ${i === 0 ? `
+    <h1>Kursfortegnelse</h1>
+    <div class="hb">
+      <table style="width:46%">
+        <tr><td colspan="3" class="cap">Fordeling og kortslutningsverdier</td></tr>
+        <tr><td colspan="3">Fordeling: ${esc(b.fordeling)}</td></tr>
+        <tr><td colspan="2" style="max-width:190px;overflow:hidden;text-overflow:ellipsis">Forsynt fra: ${esc(b.forsyntFra)}</td>
+            <td rowspan="5" class="imp">Viktig:<br>Eier/Bruker er ansvarlig for at den elektriske installasjonen og det elektriske utstyret er i henhold til gjeldende regelverk.</td></tr>
+        <tr><td>Ik Maks:</td><td class="num">${kv(b.ikMaks, 'kA')}</td></tr>
+        <tr><td>Ik Min:</td><td class="num">${kv(b.ikMin, 'kA')}</td></tr>
+        <tr><td>Ij Maks:</td><td class="num">${kv(b.ijMaks, 'kA')}</td></tr>
+        <tr><td>Ij Min:</td><td class="num">${kv(b.ijMin, 'kA')}</td></tr>
+      </table>
+      <table style="flex:1;align-self:flex-start">
+        <tr><td colspan="2" class="cap">Anleggsdata</td></tr>
+        <tr><td>Systemspenning / frekvens:</td><td>${b.spenning ? esc(b.spenning) + ' [V] ' : ''}${b.frekvens ? esc(b.frekvens) + ' [Hz]' : ''}</td></tr>
+        <tr><td>Tilførselskabel:</td><td>${b.tilforsel ? esc(b.tilforsel) + ' [mm²]' : ''}</td></tr>
+        <tr><td>Fordelingssystem:</td><td>${esc(b.system)}</td></tr>
+        <tr><td>Forankoblet vern:</td><td>${esc(b.forankoblet)}</td></tr>
+        <tr><td>Jordelektrode (type):</td><td>${esc(b.jordelektrode)}</td></tr>
+      </table>
+    </div>` : `<h1 style="width:auto;font-size:15px;border:0">Kursfortegnelse – ${esc(b.fordeling)} (forts.)</h1>`}
+    <table class="kt">
+      <colgroup><col style="width:11%"><col style="width:28%"><col style="width:8.5%"><col style="width:7%"><col style="width:6%"><col style="width:8%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:8.5%"></colgroup>
+      <tr><th rowspan="2">Kurs nr.</th><th rowspan="2">Lastbeskrivelse / Utstyr</th><th colspan="3">Vern</th><th colspan="3">Kabel</th><th>Rekkekl.</th><th>Jfb</th></tr>
+      <tr><th>Type</th><th>In [A]</th><th>Kar.</th><th>S [mm²]</th><th>L [m]</th><th>Ref.inst. met.</th><th>Nr</th><th>[mA]</th></tr>
+      ${ch.map(k => `<tr><td>${esc(k.nr)}</td><td>${esc(k.beskr)}</td><td class="c">${esc(k.type)}</td><td class="c">${esc(k.inn)}</td><td class="c">${esc(k.kar)}</td><td class="c">${esc(k.s)}</td><td class="c">${esc(k.l)}</td><td class="c">${esc(k.ref)}</td><td class="c">${esc(k.rekke)}</td><td class="c">${esc(k.jfb)}</td></tr>`).join('')}
+    </table>
+    <div class="foot">
+      <div><b>Anleggets adresse:</b><div>${esc(b.adresse)}</div></div>
+      <div><b>Anlegg:</b><div class="big">${esc(b.anlegg)}</div></div>
+      <div><b>Dato:</b> ${esc(dato)}</div>
+      <div class="firma"><span class="fn">${esc(f.navn)}</span><span>${esc(f.adr)}<br>${esc(f.post)}<br>${f.tlf ? 'Tel: ' + esc(f.tlf) : ''}</span></div>
+      <div class="big" style="display:flex;align-items:center">Kursfortegnelse</div>
+      <div>${esc(b.norm)}<br>${esc(b.spenning)} V ${esc(b.system)}<br>Side ${i + 1} av ${total}</div>
+    </div>
+  </div>`).join('');
+}
+
+const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+
+function renderGen(main, b) {
+  main.innerHTML = `
+    ${inFrame ? `<div class="notice">Du ser appen i forhåndsvisning. Utskrift/PDF, nedlasting og installering virker når appen åpnes fra sin egen adresse (f.eks. GitHub Pages).</div>` : ''}
+    <div class="card check">${checks(b).map(([c, t]) => `<div class="${c}">${c === 'o' ? '✓' : '!'} ${esc(t)}</div>`).join('')}</div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn p" style="flex:1" data-a="print">Skriv ut / Lagre som PDF</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" style="flex:1" data-a="share">Del / lagre fil</button>
+      <button class="btn" style="flex:1" data-a="csv">CSV (Excel)</button>
+    </div>
+    <div class="preview-wrap" id="pv"><div class="preview-inner" id="pvi">${docPages(b)}</div></div>`;
+  fitPreview();
+}
+function fitPreview() {
+  const w = $('#pv'), i = $('#pvi');
+  if (!w || !i) return;
+  const s = w.clientWidth / 794;
+  i.style.transform = `scale(${s})`;
+  w.style.height = (i.scrollHeight * s) + 'px';
+}
+window.addEventListener('resize', fitPreview);
+
+/* ================= Kurs editor (bottom sheet) ================= */
+function usedValues(key) {
+  const set = new Set();
+  db.boards.forEach(b => b.kurser.forEach(k => { if (k[key]) set.add(String(k[key])); }));
+  return [...set];
+}
+function mergeOpts(key) {
+  const base = OPTS[key] || [];
+  const extra = usedValues(key).filter(v => !base.includes(v));
+  if (key === 'inn' || key === 's' || key === 'jfb') {
+    const num = v => parseFloat(String(v).replace(',', '.'));
+    return [...base, ...extra].sort((a, b) => (num(a) || 0) - (num(b) || 0));
+  }
+  return [...base, ...extra];
+}
+function nextNr(nr) {
+  const m = String(nr || '').match(/^(.*?)(\d+)(\D*)$/);
+  if (!m) return nr || '';
+  const n = String(parseInt(m[2], 10) + 1);
+  return m[1] + (m[2].startsWith('0') && m[2].length > 1 ? n.padStart(m[2].length, '0') : n) + m[3];
+}
+
+function openKurs(k, isNew, insertAfter = null) {
+  ui.editing = Object.assign({}, k); ui.isNew = isNew; ui.insertAfter = insertAfter; ui.sheetMode = 'kurs';
+  const sh = $('#sheet');
+  const e = ui.editing;
+  sh.innerHTML = `
+    <div class="sh-head">
+      <button class="iconbtn" data-a="close" aria-label="Lukk">${I.x}</button>
+      <h2>${isNew ? 'Nytt kurs' : 'Rediger kurs'}</h2>
+      ${isNew ? '' : `<button class="btn d" data-a="delkurs" style="padding:8px 12px">Slett</button>`}
+    </div>
+    <div class="sh-body" data-form="kurs">
+      <div style="display:grid;grid-template-columns:34% 1fr;gap:10px">
+        ${fld('Kurs nr.', txt('nr', e.nr))}
+        ${fld('Lastbeskrivelse / utstyr', txt('beskr', e.beskr))}
+      </div>
+      <div class="sec">Vern</div>
+      ${fld('Type', chipRow('type', mergeOpts('type'), e.type) + txt('type', e.type, 'Annet…'))}
+      <div class="grid2">
+        ${fld('In', unitInput('inn', e.inn, 'A'))}
+        ${fld('Karakteristikk', txt('kar', e.kar))}
+      </div>
+      ${chipRow('inn', mergeOpts('inn'), e.inn)}
+      ${chipRow('kar', mergeOpts('kar'), e.kar)}
+      <div class="sec">Kabel</div>
+      <div class="grid2">
+        ${fld('Tverrsnitt S', unitInput('s', e.s, 'mm²'))}
+        ${fld('Lengde L', unitInput('l', e.l, 'm'))}
+      </div>
+      ${chipRow('s', mergeOpts('s'), e.s)}
+      ${fld('Ref. installasjonsmetode', chipRow('ref', mergeOpts('ref'), e.ref) + txt('ref', e.ref))}
+      <div class="sec">Annet</div>
+      <div class="grid2">
+        ${fld('Rekkeklemme nr', txt('rekke', e.rekke))}
+        ${fld('Jordfeilbryter', unitInput('jfb', e.jfb, 'mA'))}
+      </div>
+      ${chipRow('jfb', mergeOpts('jfb'), e.jfb)}
+      ${isNew ? '' : `
+      <div class="sec">Plassering</div>
+      <div class="row">
+        <button class="btn" style="flex:1" data-a="up">↑ Flytt opp</button>
+        <button class="btn" style="flex:1" data-a="down">↓ Flytt ned</button>
+        <button class="btn" style="flex:1" data-a="dup">Dupliser</button>
+      </div>`}
+    </div>
+    <div class="sh-foot">
+      <button class="btn" data-a="savenext">Lagre + neste</button>
+      <button class="btn p" data-a="savekurs">Lagre</button>
+    </div>`;
+  showSheet();
+}
+
+function showSheet() {
+  $('#sheet').classList.add('on'); $('#scrim').classList.add('on');
+  const h = location.hash.slice(1);
+  if (ui.boardId && !h.endsWith('-e')) location.hash = h + '-e';
+  else if (!ui.boardId && h !== 'innst-e') location.hash = 'innst-e';
+  $('#sheet .sh-body') && ($('#sheet .sh-body').scrollTop = 0);
+}
+function hideSheet() {
+  $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on');
+  ui.sheetMode = null;
+  if (document.activeElement) document.activeElement.blur();
+}
+function closeSheet() {
+  if (location.hash.endsWith('-e')) history.back(); else hideSheet();
+}
+
+function readForm(root, obj) {
+  $$('input[data-f]', root).forEach(i => { obj[i.dataset.f] = i.value.trim(); });
+  return obj;
+}
+
+function saveKurs(next) {
+  const b = board();
+  const e = readForm($('#sheet'), ui.editing);
+  if (ui.isNew) {
+    const idx = ui.insertAfter ? b.kurser.findIndex(k => k.id === ui.insertAfter) : -1;
+    if (idx >= 0) b.kurser.splice(idx + 1, 0, e); else b.kurser.push(e);
+  } else {
+    const i = b.kurser.findIndex(k => k.id === e.id);
+    if (i >= 0) b.kurser[i] = e;
+  }
+  touch(b);
+  if (next) {
+    const n = newKurs({ nr: nextNr(e.nr), type: e.type, inn: e.inn, kar: e.kar, s: e.s, ref: e.ref, jfb: e.jfb });
+    render();
+    openKurs(n, true, e.id);
+    toast(`Lagret ${e.nr || 'kurs'}`);
+  } else {
+    closeSheet();
+    render();
+  }
+}
+function touch(b) { b.updated = Date.now(); save(); }
+
+/* ================= Settings sheet ================= */
+function openSettings() {
+  ui.sheetMode = 'settings';
+  const f = db.firma;
+  $('#sheet').innerHTML = `
+    <div class="sh-head">
+      <button class="iconbtn" data-a="close">${I.x}</button>
+      <h2>Firma i bunnfeltet</h2>
+    </div>
+    <div class="sh-body" data-form="firma">
+      ${fld('Firmanavn', txt('navn', f.navn))}
+      ${fld('Adresse', txt('adr', f.adr))}
+      ${fld('Postnr og sted', txt('post', f.post))}
+      ${fld('Telefon', `<input data-f="tlf" value="${esc(f.tlf)}" inputmode="tel">`)}
+      <div class="sec">Sikkerhetskopi</div>
+      <p style="color:var(--muted);font-size:14px;margin:0 0 10px">Data lagres bare på denne telefonen. Ta jevnlig kopi av alle fordelinger.</p>
+      <button class="btn block" data-a="backup">Eksporter alle fordelinger</button>
+    </div>
+    <div class="sh-foot"><button class="btn p" data-a="savefirma">Lagre</button></div>`;
+  showSheet();
+}
+
+/* ================= Dialogs, toast, menu ================= */
+function confirmDlg(title, text, okLabel, onOk) {
+  const l = $('#layer');
+  l.innerHTML = `<div class="dlg"><div class="card"><h3>${esc(title)}</h3><p>${esc(text)}</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-d="no">Avbryt</button><button class="btn p" style="background:var(--danger);border-color:var(--danger)" data-d="ok">${esc(okLabel)}</button></div></div></div>`;
+  l.onclick = ev => {
+    const d = ev.target.closest('[data-d]'); if (!d && ev.target.closest('.card')) return;
+    l.innerHTML = ''; l.onclick = null;
+    if (d && d.dataset.d === 'ok') onOk();
+  };
+}
+let toastT;
+function toast(msg, action, fn) {
+  clearTimeout(toastT);
+  let t = $('.toast'); if (t) t.remove();
+  t = document.createElement('div'); t.className = 'toast';
+  t.innerHTML = `<span>${esc(msg)}</span>${action ? `<button>${esc(action)}</button>` : ''}`;
+  if (action) t.querySelector('button').onclick = () => { t.remove(); fn(); };
+  document.body.appendChild(t);
+  toastT = setTimeout(() => t.remove(), action ? 6000 : 2200);
+}
+function showMenu() {
+  const m = document.createElement('div'); m.className = 'menu';
+  m.innerHTML = `<button data-m="dupboard">Dupliser fordeling</button><button data-m="exportboard">Eksporter fordeling (fil)</button><button data-m="delboard" style="color:var(--danger)">Slett fordeling</button>`;
+  const close = () => { m.remove(); document.removeEventListener('click', outside, true); };
+  const outside = ev => { if (!m.contains(ev.target)) { close(); ev.stopPropagation(); ev.preventDefault(); } };
+  m.onclick = ev => {
+    const a = ev.target.closest('[data-m]'); if (!a) return; close();
+    const b = board();
+    if (a.dataset.m === 'dupboard') {
+      const c = JSON.parse(JSON.stringify(b)); c.id = uid(); c.fordeling = (b.fordeling || 'Fordeling') + ' (kopi)';
+      c.kurser.forEach(k => k.id = uid()); c.updated = Date.now();
+      db.boards.push(c); save(); go('f-' + c.id); toast('Fordeling duplisert');
+    } else if (a.dataset.m === 'exportboard') {
+      exportJSON({ app: 'kursfortegnelse', version: 1, boards: [b] }, fileBase(b) + '.json');
+    } else if (a.dataset.m === 'delboard') {
+      confirmDlg('Slette fordeling?', `«${b.fordeling || 'Uten navn'}» med ${b.kurser.length} kurs slettes fra telefonen.`, 'Slett', () => {
+        const i = db.boards.indexOf(b); db.boards.splice(i, 1); save(); go('');
+        toast('Fordeling slettet', 'Angre', () => { db.boards.splice(i, 0, b); save(); go('f-' + b.id); });
+      });
+    }
+  };
+  document.body.appendChild(m);
+  setTimeout(() => document.addEventListener('click', outside, true));
+}
+
+/* ================= Export / import ================= */
+function fileBase(b) { return ('Kursfortegnelse ' + (b.fordeling || 'fordeling')).replace(/[\\/:*?"<>|]+/g, '-').trim(); }
+function download(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function shareOrDownload(blob, name) {
+  try {
+    const file = new File([blob], name, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  download(blob, name);
+}
+function exportJSON(obj, name) { shareOrDownload(new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' }), name); }
+function exportCSV(b) {
+  const cols = [['nr','Kurs nr.'],['beskr','Lastbeskrivelse / Utstyr'],['type','Vern type'],['inn','In [A]'],['kar','Kar.'],['s','S [mm²]'],['l','L [m]'],['ref','Ref.inst.met.'],['rekke','Rekkekl. nr'],['jfb','Jfb [mA]']];
+  const q = v => { v = String(v ?? ''); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const lines = [cols.map(c => q(c[1])).join(';'), ...b.kurser.map(k => cols.map(c => q(k[c[0]])).join(';'))];
+  shareOrDownload(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv' }), fileBase(b) + '.csv');
+}
+function importFile(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      const list = Array.isArray(d.boards) ? d.boards : (d.kurser ? [d] : null);
+      if (!list) throw 0;
+      list.forEach(b => {
+        const nb = Object.assign(newBoard(), b, { id: uid(), updated: Date.now() });
+        nb.kurser = (b.kurser || []).map(k => newKurs(Object.assign({}, k, { id: uid() })));
+        db.boards.push(nb);
+      });
+      save(); render(); toast(`Importerte ${list.length} fordeling${list.length > 1 ? 'er' : ''}`);
+    } catch (e) { toast('Kunne ikke lese fila'); }
+  };
+  r.readAsText(file);
+}
+function doPrint(b) {
+  $('#print-root').innerHTML = docPages(b);
+  const old = document.title; document.title = fileBase(b);
+  try { window.print(); } catch (e) { toast('Utskrift er ikke tilgjengelig her'); }
+  setTimeout(() => { document.title = old; }, 1000);
+}
+
+/* ================= Events ================= */
+document.addEventListener('click', ev => {
+  const t = ev.target;
+  const chip = t.closest('.chip');
+  if (chip) {
+    const row = chip.parentElement, key = row.dataset.chips;
+    const scope = row.closest('[data-form]') || document;
+    const inp = $(`input[data-f="${key}"]`, scope);
+    const v = chip.classList.contains('on') ? '' : chip.dataset.v;
+    if (inp) { inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+    return;
+  }
+  const open = t.closest('[data-open]'); if (open) return go('f-' + open.dataset.open);
+  const tab = t.closest('[data-tab]'); if (tab) return go(`f-${ui.boardId}-${tab.dataset.tab}`);
+  const kk = t.closest('[data-kurs]');
+  if (kk) { const k = board().kurser.find(x => x.id === kk.dataset.kurs); return openKurs(k, false); }
+  const a = t.closest('[data-a]'); if (!a) return;
+  const b = board();
+  switch (a.dataset.a) {
+    case 'home': go(''); break;
+    case 'menu': showMenu(); break;
+    case 'settings': openSettings(); break;
+    case 'newboard': { const nb = newBoard(); db.boards.push(nb); save(); go(`f-${nb.id}-data`); break; }
+    case 'add': {
+      const last = b.kurser[b.kurser.length - 1];
+      openKurs(newKurs(last ? { nr: nextNr(last.nr), type: last.type, kar: last.kar, ref: last.ref, jfb: last.jfb } : { nr: '-F1' }), true);
+      break;
+    }
+    case 'close': closeSheet(); break;
+    case 'savekurs': saveKurs(false); break;
+    case 'savenext': saveKurs(true); break;
+    case 'delkurs': {
+      const i = b.kurser.findIndex(k => k.id === ui.editing.id); const removed = b.kurser[i];
+      b.kurser.splice(i, 1); touch(b); closeSheet(); render();
+      toast(`Slettet ${removed.nr || 'kurs'}`, 'Angre', () => { b.kurser.splice(i, 0, removed); touch(b); render(); });
+      break;
+    }
+    case 'up': case 'down': {
+      const i = b.kurser.findIndex(k => k.id === ui.editing.id), j = i + (a.dataset.a === 'up' ? -1 : 1);
+      if (i < 0 || j < 0 || j >= b.kurser.length) { toast(a.dataset.a === 'up' ? 'Allerede øverst' : 'Allerede nederst'); break; }
+      readForm($('#sheet'), ui.editing); b.kurser[i] = ui.editing;
+      [b.kurser[i], b.kurser[j]] = [b.kurser[j], b.kurser[i]]; touch(b); render();
+      toast(`Flyttet til plass ${j + 1} av ${b.kurser.length}`);
+      break;
+    }
+    case 'dup': {
+      const e = readForm($('#sheet'), ui.editing);
+      const i = b.kurser.findIndex(k => k.id === e.id); if (i >= 0) b.kurser[i] = e;
+      touch(b); render();
+      openKurs(newKurs(Object.assign({}, e, { id: uid(), nr: nextNr(e.nr) })), true, e.id);
+      toast('Kopi – juster og lagre');
+      break;
+    }
+    case 'now': { const i = $('input[data-f="dato"]'); i.value = nowStr(); i.dispatchEvent(new Event('input', { bubbles: true })); break; }
+    case 'print': doPrint(b); break;
+    case 'share': exportJSON({ app: 'kursfortegnelse', version: 1, boards: [b] }, fileBase(b) + '.json'); break;
+    case 'csv': exportCSV(b); break;
+    case 'savefirma': readForm($('#sheet'), db.firma); save(); closeSheet(); toast('Lagret'); break;
+    case 'backup': exportJSON({ app: 'kursfortegnelse', version: 1, boards: db.boards, firma: db.firma }, `Kursfortegnelser backup ${new Date().toISOString().slice(0, 10)}.json`); break;
+  }
+});
+$('#scrim').addEventListener('click', closeSheet);
+
+document.addEventListener('input', ev => {
+  const inp = ev.target.closest('input[data-f]'); if (!inp) return;
+  const form = inp.closest('[data-form]');
+  // sync chips
+  if (form) $$(`[data-chips="${inp.dataset.f}"] .chip`, form).forEach(c => c.classList.toggle('on', c.dataset.v === inp.value.trim()));
+  if (form && form.dataset.form === 'board') {
+    const b = board(); b[inp.dataset.f] = inp.value.trim(); touch(b);
+    if (inp.dataset.f === 'fordeling' || inp.dataset.f === 'anlegg') {
+      const h = $('.top h1'); if (h) h.innerHTML = `${esc(b.fordeling || 'Ny fordeling')}<span class="sub">${esc(b.anlegg || '')}${b.anlegg ? ' · ' : ''}${b.kurser.length} kurs</span>`;
+    }
+  }
+});
+document.addEventListener('change', ev => {
+  if (ev.target.matches('input[data-a="import"]') && ev.target.files[0]) { importFile(ev.target.files[0]); ev.target.value = ''; }
+});
+// Enter in kurs nr → go to description; Enter in description → save + next
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter') return;
+  const inp = ev.target.closest('#sheet input[data-f]'); if (!inp || ui.sheetMode !== 'kurs') return;
+  ev.preventDefault();
+  const all = $$('#sheet input[data-f]'); const i = all.indexOf(inp);
+  if (all[i + 1]) all[i + 1].focus();
+});
+
+/* ================= Start ================= */
+if ('serviceWorker' in navigator && !inFrame) {
+  try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
+}
+route();
+</script>
+</body>
+</html>
