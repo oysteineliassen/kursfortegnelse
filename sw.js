@@ -1,4 +1,4 @@
-const CACHE = 'kursfortegnelse-v2';
+const CACHE = 'kursfortegnelse-v3';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-512.png', './logo.png'];
 
 self.addEventListener('install', e => {

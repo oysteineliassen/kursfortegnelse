@@ -52,6 +52,13 @@ main{padding:12px 12px calc(100px + var(--sb));max-width:760px;margin:0 auto}
 .tag.k{background:#fdf1dc;color:#7a5200}
 .tag.j{background:#f6e6f4;color:#7a2a6e}
 .kurs:active{background:#f7f9fc}
+.kurs{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform .25s,box-shadow .2s}
+.kurs.pressing{transform:scale(.97)}
+.kurs.dragging{transform:scale(1.03);box-shadow:0 14px 34px rgba(20,30,50,.3);transition:none}
+.kurs-ph{border:2px dashed #b4c4d8;border-radius:var(--radius);margin-bottom:8px;background:rgba(31,95,168,.05)}
+body.dragmode{overscroll-behavior:none}
+.hint{font-size:12.5px;color:var(--muted);text-align:center;margin:0 0 10px}
+.nrfix{padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#eef1f5;color:var(--muted);font-weight:600}
 
 .fab{position:fixed;right:16px;bottom:calc(18px + var(--sb));z-index:15;background:var(--accent);color:#fff;border-radius:18px;padding:15px 20px;font-weight:650;box-shadow:0 6px 18px rgba(31,95,168,.35);display:flex;gap:8px;align-items:center}
 .fab svg{width:20px;height:20px}
@@ -346,7 +353,7 @@ function renderKurser(main, b) {
     main.innerHTML = `<div class="empty">Ingen kurser ennå.<br>Trykk «Nytt kurs» nede til høyre.</div>`;
     return;
   }
-  main.innerHTML = b.kurser.map(k => `
+  main.innerHTML = `<div class="hint">Hold inne på et kurs og dra for å endre rekkefølge${isBolig(b) ? ' – numrene følger rekkefølgen' : ''}</div>` + b.kurser.map(k => `
     <button class="card kurs" data-kurs="${k.id}">
       <div class="nr">${esc(k.nr || '–')}</div>
       <div class="b">
@@ -354,6 +361,97 @@ function renderKurser(main, b) {
         <div class="tags">${kursTags(k)}</div>
       </div>
     </button>`).join('');
+  dragInit(main, b);
+}
+
+/* ---------- Hold og dra for å sortere ---------- */
+const drag = { timer: null, active: false, el: null, ph: null, main: null, b: null, startY: 0, offY: 0, y: 0, justEnded: false };
+function dragInit(main, b) {
+  const start = (c, y) => {
+    cancelPress(); drag.startY = y; drag.main = main; drag.b = b;
+    c.classList.add('pressing');
+    drag.timer = setTimeout(() => dragStart(c, y), 380);
+  };
+  main.addEventListener('touchstart', e => {
+    const c = e.target.closest('.kurs'); if (!c || e.touches.length > 1) return;
+    start(c, e.touches[0].clientY);
+  }, { passive: true });
+  main.addEventListener('touchmove', e => {
+    const y = e.touches[0].clientY;
+    if (drag.active) { e.preventDefault(); drag.y = y; dragPos(); }
+    else if (drag.timer && Math.abs(y - drag.startY) > 8) cancelPress();
+  }, { passive: false });
+  const end = () => { if (drag.active) dragEnd(); else cancelPress(); };
+  main.addEventListener('touchend', end);
+  main.addEventListener('touchcancel', end);
+  main.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const c = e.target.closest('.kurs'); if (!c) return;
+    start(c, e.clientY);
+    const mm = ev => {
+      if (drag.active) { drag.y = ev.clientY; dragPos(); }
+      else if (drag.timer && Math.abs(ev.clientY - drag.startY) > 8) cancelPress();
+    };
+    const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); end(); };
+    document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu);
+  });
+  main.addEventListener('contextmenu', e => { if (e.target.closest('.kurs')) e.preventDefault(); });
+}
+function cancelPress() {
+  clearTimeout(drag.timer); drag.timer = null;
+  $$('.kurs.pressing').forEach(c => c.classList.remove('pressing'));
+}
+function dragStart(c, y) {
+  drag.timer = null; drag.active = true; drag.el = c; drag.y = y;
+  c.classList.remove('pressing');
+  const r = c.getBoundingClientRect();
+  drag.offY = y - r.top;
+  const ph = document.createElement('div'); ph.className = 'kurs-ph'; ph.style.height = r.height + 'px';
+  c.parentNode.insertBefore(ph, c); drag.ph = ph;
+  Object.assign(c.style, { position: 'fixed', left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', zIndex: 50, margin: 0 });
+  c.classList.add('dragging');
+  document.body.classList.add('dragmode');
+  try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+  const loop = () => {
+    if (!drag.active) return;
+    const H = window.innerHeight, top = ($('.tabs') ? $('.tabs').getBoundingClientRect().bottom : 0);
+    let v = 0;
+    if (drag.y < top + 70) v = -Math.min(18, (top + 70 - drag.y) / 3);
+    else if (drag.y > H - 70) v = Math.min(18, (drag.y - (H - 70)) / 3);
+    if (v) { window.scrollBy(0, v); dragPos(); }
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+function dragPos() {
+  const el = drag.el, ph = drag.ph;
+  el.style.top = (drag.y - drag.offY) + 'px';
+  const cards = $$('.kurs', drag.main).filter(k => k !== el);
+  let before = null;
+  for (const k of cards) { const r = k.getBoundingClientRect(); if (drag.y < r.top + r.height / 2) { before = k; break; } }
+  if (before) { if (ph.nextElementSibling !== before) before.before(ph); }
+  else if (cards.length) { const last = cards[cards.length - 1]; if (last.nextElementSibling !== ph) last.after(ph); }
+  if (isBolig(drag.b)) {
+    let n = 0;
+    [...drag.main.children].forEach(ch => {
+      if (ch === el) return;
+      const card = ch === ph ? el : (ch.classList.contains('kurs') ? ch : null);
+      if (card) card.querySelector('.nr').textContent = ++n;
+    });
+  }
+}
+function dragEnd() {
+  const { el, ph, b, main } = drag;
+  drag.active = false;
+  ph.replaceWith(el);
+  el.removeAttribute('style'); el.classList.remove('dragging');
+  document.body.classList.remove('dragmode');
+  const ids = $$('.kurs', main).map(k => k.dataset.kurs);
+  const before = b.kurser.map(k => k.id).join();
+  b.kurser.sort((x, y) => ids.indexOf(x.id) - ids.indexOf(y.id));
+  if (b.kurser.map(k => k.id).join() !== before) touch(b);
+  drag.justEnded = true; setTimeout(() => { drag.justEnded = false; }, 400);
+  render();
 }
 
 function unitInput(key, val, unit, mode = 'decimal') {
@@ -607,7 +705,7 @@ function openKurs(k, isNew, insertAfter = null) {
     </div>
     <div class="sh-body" data-form="kurs">
       <div style="display:grid;grid-template-columns:34% 1fr;gap:10px">
-        ${fld('Kurs nr.', txt('nr', e.nr))}
+        ${isBolig(board()) ? fld('Kurs nr.', `<div class="nrfix">${esc(e.nr)}</div>`) : fld('Kurs nr.', txt('nr', e.nr))}
         ${fld('Lastbeskrivelse / utstyr', txt('beskr', e.beskr))}
       </div>
       ${isBolig(board()) ? `
@@ -700,7 +798,8 @@ function saveKurs(next) {
     render();
   }
 }
-function touch(b) { b.updated = Date.now(); save(); }
+function renumber(b) { if (isBolig(b)) b.kurser.forEach((k, i) => { k.nr = String(i + 1); }); }
+function touch(b) { renumber(b); b.updated = Date.now(); save(); }
 
 /* ================= Settings sheet ================= */
 function openSettings() {
@@ -780,7 +879,9 @@ function showMenu() {
       c.kurser.forEach(k => k.id = uid()); c.updated = Date.now();
       db.boards.push(c); save(); go('f-' + c.id); toast('Fordeling duplisert');
     } else if (a.dataset.m === 'mal') {
-      b.mal = isBolig(b) ? 'naering' : 'bolig'; touch(b); render();
+      if (isBolig(b)) { b.mal = 'naering'; b.kurser.forEach(k => { if (k.nrNaering) k.nr = k.nrNaering; }); }
+      else { b.kurser.forEach(k => { k.nrNaering = k.nr; }); b.mal = 'bolig'; }
+      touch(b); render();
       toast(`Bruker nå ${MALER[b.mal].navn.toLowerCase()} – ingen data er slettet`);
     } else if (a.dataset.m === 'exportboard') {
       exportJSON({ app: 'kursfortegnelse', version: 1, boards: [b] }, fileBase(b) + '.json');
@@ -855,7 +956,7 @@ document.addEventListener('click', ev => {
   const open = t.closest('[data-open]'); if (open) return go('f-' + open.dataset.open);
   const tab = t.closest('[data-tab]'); if (tab) return go(`f-${ui.boardId}-${tab.dataset.tab}`);
   const kk = t.closest('[data-kurs]');
-  if (kk) { const k = board().kurser.find(x => x.id === kk.dataset.kurs); return openKurs(k, false); }
+  if (kk) { if (drag.justEnded) return; const k = board().kurser.find(x => x.id === kk.dataset.kurs); return openKurs(k, false); }
   const a = t.closest('[data-a]'); if (!a) return;
   const b = board();
   switch (a.dataset.a) {
@@ -865,6 +966,7 @@ document.addEventListener('click', ev => {
     case 'newboard': chooseMal(mal => { const nb = newBoard(mal); db.boards.push(nb); save(); go(`f-${nb.id}-data`); }); break;
     case 'add': {
       const last = b.kurser[b.kurser.length - 1];
+      if (isBolig(b)) { openKurs(newKurs({ nr: String(b.kurser.length + 1), inn: last ? last.inn : '', s: last ? last.s : '', ref: last ? last.ref : '' }), true); break; }
       openKurs(newKurs(last ? { nr: nextNr(last.nr), type: last.type, kar: last.kar, ref: last.ref, jfb: last.jfb } : { nr: isBolig(b) ? '1' : '-F1' }), true);
       break;
     }
